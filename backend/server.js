@@ -42,6 +42,8 @@ app.use(cors({
 app.use(express.json());
 
 // Configure session middleware
+app.set('trust proxy', 1);
+
 app.use(session({
   name: 'accesscheck.sid',
   secret: SESSION_SECRET,
@@ -49,9 +51,9 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false, // Set to true when using HTTPS in production
-    sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    secure: true,
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
