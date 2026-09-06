@@ -42,6 +42,11 @@ export default function VisionSimulator({
       description: 'Simulates reduced sensitivity to green light, which can affect how some red/green color differences are perceived.'
     },
     {
+      id: 'tritanopia',
+      label: 'Tritanopia',
+      description: 'Simulates absence of blue cone cells, causing difficulty distinguishing between blue/green and yellow/pink hues.'
+    },
+    {
       id: 'low-vision',
       label: 'Low Vision',
       description: 'An illustrative visual-clarity simulation using blur and contrast reduction.'
@@ -398,6 +403,8 @@ export default function VisionSimulator({
         return 'url(#access-check-protanopia)';
       case 'deuteranopia':
         return 'url(#access-check-deuteranopia)';
+      case 'tritanopia':
+        return 'url(#access-check-tritanopia)';
       case 'low-vision':
         return 'blur(4px) contrast(0.75) brightness(0.95)';
       case 'original':
@@ -429,6 +436,16 @@ export default function VisionSimulator({
                       0.70000 0.30000 0.00000 0.00000 0.00000
                       0.00000 0.30000 0.70000 0.00000 0.00000
                       0.00000 0.00000 0.00000 1.00000 0.00000"
+            />
+          </filter>
+          {/* Tritanopia color matrix — blue-yellow color blindness (Brettel/Viénot model) */}
+          <filter id="access-check-tritanopia" colorInterpolationFilters="linearRGB">
+            <feColorMatrix
+              type="matrix"
+              values="0.95033  0.04967  0.00000  0.00000  0.00000
+                      0.00000  0.43277  0.56723  0.00000  0.00000
+                      0.00000  0.47300  0.52700  0.00000  0.00000
+                      0.00000  0.00000  0.00000  1.00000  0.00000"
             />
           </filter>
         </defs>

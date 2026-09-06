@@ -1,0 +1,31 @@
+===== PAGE 1 =====
+Access Check
+Accessibility Audit Report
+AUDIT INFORMATION
+Website:
+https://example.com/very/long/path/that/should/wrap/properly
+Scan Date:
+August 27, 2026 at 04:00 PM GMT+5:30
+Accessibility Score:
+45/100
+Total Violations:
+3
+ACCESSIBILITY FINDINGS
+Finding 1
+Rule: color-contrast
+Critical severity
+Description: Elements must have sufficient color contrast for readability by users with low vision.
+How to Fix: Increase the contrast between the foreground text color and the background color. Web 
+Content Accessibility Guidelines (WCAG) AAA requires a ratio of at least 4.5:1 for normal text and 3:1 for 
+large text.
+Finding 2
+Rule: html-has-lang
+Serious severity
+Description: html element must have a lang attribute
+How to Fix: Add the `lang` attribute to the root `<html>` element with the appropriate language code 
+(e.g., "en" for English, "es" for Spanish).
+Finding 3
+Rule: image-alt
+Critical severity
+Description: Images must have alternate text
+

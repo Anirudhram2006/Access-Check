@@ -1,0 +1,7 @@
+===== PAGE 2 =====
+How to Fix: Add a descriptive `alt` attribute to the `<img>` tag. For decorative images that don't convey 
+meaning, use an empty alt attribute (`alt=""`) so screen readers skip them.
+INDIC TEXT
+Tamil:
+Hindi:
+

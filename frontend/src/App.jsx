@@ -1,14 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import EmptyState from './components/EmptyState';
 import LoadingState from './components/LoadingState';
 import AuditResults from './components/AuditResults';
 import VisionSimulator from './components/VisionSimulator';
+import AuditHistory from './components/AuditHistory';
+import CommonMistakes from './components/CommonMistakes';
+import SourceCodeAnalysis from './components/SourceCodeAnalysis';
+import ApiAnalysis from './components/ApiAnalysis';
+import GitHubIntegration from './components/GitHubIntegration';
+import AccessibilityChatbot from './components/AccessibilityChatbot';
+import AuthPage from './components/AuthPage';
 import { demoScan } from './utils/demoScan';
 import { ShieldAlert, BookOpen, Cpu, HardDrive } from 'lucide-react';
 
+const BACKEND_URL = 'http://localhost:5000';
+
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('scanner');
   const [loading, setLoading] = useState(false);
   const [scanResult, setScanResult] = useState(null);
@@ -17,7 +28,63 @@ export default function App() {
   const [customTamilText, setCustomTamilText] = useState(null);
   const [customHindiText, setCustomHindiText] = useState(null);
 
-  const BACKEND_URL = 'http://localhost:5000';
+  // Check if user has an active session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/auth/me`, {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch {
+        // Server unreachable or not authenticated - stay logged out
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    checkSession();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${BACKEND_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch {
+      // Proceed with local logout even if server call fails
+    }
+    setUser(null);
+    setScanResult(null);
+    setIsDemoMode(false);
+    setErrorMsg('');
+    setActiveTab('scanner');
+  };
+
+  // Show loading spinner while checking auth
+  if (authLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        color: 'var(--text-secondary)',
+        fontSize: '14px',
+        fontWeight: 600
+      }}>
+        <span className="animate-pulse">Loading Access Check...</span>
+      </div>
+    );
+  }
+
+  // Show auth page if not logged in
+  if (!user) {
+    return <AuthPage onAuth={setUser} />;
+  }
 
   /**
    * Triggers a live accessibility audit by sending a POST request to our Node/Express backend.
@@ -40,6 +107,7 @@ export default function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ url: targetUrl }),
       });
 
@@ -52,6 +120,13 @@ export default function App() {
           // Fallback if not JSON
           errMessage = `Server error (Status Code: ${response.status})`;
         }
+
+        // If session expired, force re-login
+        if (response.status === 401) {
+          setUser(null);
+          return;
+        }
+
         throw new Error(errMessage);
       }
 
@@ -108,7 +183,7 @@ export default function App() {
   return (
     <div id="root">
       {/* Header Navigation */}
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Header activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} />
 
       {/* Main Container Area */}
       <main className="main-content">
@@ -169,7 +244,40 @@ export default function App() {
           />
         )}
 
-        {/* TAB 3: ABOUT VIEW */}
+        {/* TAB 3: HISTORY VIEW */}
+        {activeTab === 'history' && (
+          <AuditHistory />
+        )}
+
+        {/* TAB 4: INSIGHTS VIEW */}
+        {activeTab === 'insights' && (
+          <CommonMistakes />
+        )}
+
+        {/* TAB: SOURCE CODE ANALYSIS VIEW */}
+        {activeTab === 'source' && (
+          <SourceCodeAnalysis onViewHistory={() => setActiveTab('history')} />
+        )}
+
+        {/* TAB: API / BACKEND ANALYSIS VIEW */}
+        {activeTab === 'api' && (
+          <ApiAnalysis />
+        )}
+
+        {/* TAB: GITHUB INTEGRATION VIEW */}
+        {activeTab === 'github' && (
+          <GitHubIntegration onViewHistory={() => setActiveTab('history')} />
+        )}
+
+        {/* TAB: ACCESSIBILITY CHATBOT VIEW */}
+        {activeTab === 'chatbot' && (
+          <AccessibilityChatbot 
+            scanResult={scanResult} 
+            isDemoMode={isDemoMode} 
+          />
+        )}
+
+        {/* TAB 5: ABOUT VIEW */}
         {activeTab === 'about' && (
           <div className="about-page-container container">
             <div className="about-grid">
@@ -269,95 +377,6 @@ export default function App() {
           color: #fca5a5;
           line-height: 1.5;
           margin: 0;
-        }
-
-        /* Simulator Coming Soon View */
-        .simulator-coming-soon {
-          padding: 80px 24px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 60vh;
-        }
-
-        .coming-soon-card {
-          max-width: 600px;
-          width: 100%;
-          padding: 48px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          border-color: rgba(234, 179, 8, 0.25);
-          box-shadow: 0 20px 40px rgba(234, 179, 8, 0.05);
-        }
-
-        .coming-soon-icon-wrapper {
-          background-color: rgba(234, 179, 8, 0.08);
-          border: 1px solid rgba(234, 179, 8, 0.2);
-          padding: 16px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 24px;
-        }
-
-        .coming-soon-title {
-          font-size: 26px;
-          font-weight: 850;
-          letter-spacing: -0.02em;
-          margin-bottom: 6px;
-        }
-
-        .coming-soon-tagline {
-          font-size: 13px;
-          font-weight: 800;
-          color: #fef08a;
-          background: rgba(234, 179, 8, 0.15);
-          padding: 4px 12px;
-          border-radius: 9999px;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-        }
-
-        .coming-soon-divider {
-          width: 60px;
-          height: 1px;
-          background-color: var(--border-color);
-          margin: 24px 0;
-        }
-
-        .coming-soon-description {
-          font-size: 15px;
-          color: var(--text-secondary);
-          line-height: 1.6;
-          margin-bottom: 24px;
-        }
-
-        .simulator-features-preview-grid {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          width: 100%;
-          background: rgba(0, 0, 0, 0.15);
-          border: 1px solid var(--border-color);
-          padding: 18px;
-          border-radius: var(--radius-md);
-          text-align: left;
-        }
-
-        .feature-preview-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--text-secondary);
-        }
-
-        .feature-icon {
-          flex-shrink: 0;
         }
 
         /* About Page View */
@@ -467,14 +486,6 @@ export default function App() {
 
         @media (max-width: 640px) {
           .about-main-col, .about-side-col {
-            padding: 24px;
-          }
-          
-          .simulator-coming-soon {
-            padding: 40px 12px;
-          }
-          
-          .coming-soon-card {
             padding: 24px;
           }
         }

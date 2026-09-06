@@ -8,8 +8,14 @@
   },
   "dependencies": {
     "@axe-core/puppeteer": "^4.9.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "express-session": "^1.19.0",
+    "harfbuzzjs": "^1.6.0",
+    "multer": "^2.2.0",
+    "pdfkit": "^0.20.1",
     "puppeteer": "^22.12.1"
   }
 }

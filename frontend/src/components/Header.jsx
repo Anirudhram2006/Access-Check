@@ -1,15 +1,17 @@
 import React from 'react';
-import { Eye, Shield, HelpCircle, Info, Scan } from 'lucide-react';
+import { Eye, Shield, Info, Scan, LogOut, User, Clock, BarChart3, FileCode2, Server, GitBranch, MessageCircle } from 'lucide-react';
 
 /**
  * Header Component
- * Shows application title, tagline, and main navigation tabs.
+ * Shows application title, tagline, main navigation tabs, and user controls.
  * 
  * @param {object} props
  * @param {string} props.activeTab - Currently active tab ('scanner', 'simulator', 'about')
  * @param {function} props.setActiveTab - State setter to switch tabs
+ * @param {object|null} props.user - Current authenticated user or null
+ * @param {function} props.onLogout - Callback to log out the user
  */
-export default function Header({ activeTab, setActiveTab }) {
+export default function Header({ activeTab, setActiveTab, user, onLogout }) {
   return (
     <header className="header-container">
       <div className="container header-inner">
@@ -45,6 +47,60 @@ export default function Header({ activeTab, setActiveTab }) {
           </button>
           
           <button 
+            className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('history')}
+            aria-label="Audit History"
+          >
+            <Clock size={18} />
+            <span>History</span>
+          </button>
+          
+          <button 
+            className={`nav-item ${activeTab === 'insights' ? 'active' : ''}`}
+            onClick={() => setActiveTab('insights')}
+            aria-label="Common Mistakes Insights"
+          >
+            <BarChart3 size={18} />
+            <span>Insights</span>
+          </button>
+
+          <button 
+            className={`nav-item ${activeTab === 'source' ? 'active' : ''}`}
+            onClick={() => setActiveTab('source')}
+            aria-label="Source Code Analysis"
+          >
+            <FileCode2 size={18} />
+            <span>Source Code</span>
+          </button>
+
+          <button 
+            className={`nav-item ${activeTab === 'api' ? 'active' : ''}`}
+            onClick={() => setActiveTab('api')}
+            aria-label="API Analysis"
+          >
+            <Server size={18} />
+            <span>API Analysis</span>
+          </button>
+
+          <button 
+            className={`nav-item ${activeTab === 'github' ? 'active' : ''}`}
+            onClick={() => setActiveTab('github')}
+            aria-label="GitHub Integration"
+          >
+            <GitBranch size={18} />
+            <span>GitHub</span>
+          </button>
+
+          <button 
+            className={`nav-item ${activeTab === 'chatbot' ? 'active' : ''}`}
+            onClick={() => setActiveTab('chatbot')}
+            aria-label="Accessibility Chatbot"
+          >
+            <MessageCircle size={18} />
+            <span>Chat</span>
+          </button>
+          
+          <button 
             className={`nav-item ${activeTab === 'about' ? 'active' : ''}`}
             onClick={() => setActiveTab('about')}
             aria-label="About Access Check"
@@ -53,6 +109,26 @@ export default function Header({ activeTab, setActiveTab }) {
             <span>About</span>
           </button>
         </nav>
+
+        {user && (
+          <div className="user-section">
+            <div className="user-info">
+              <div className="user-avatar">
+                <User size={16} />
+              </div>
+              <span className="user-name">{user.name}</span>
+            </div>
+            <button 
+              className="logout-btn" 
+              onClick={onLogout}
+              aria-label="Log out"
+              title="Log out"
+            >
+              <LogOut size={16} />
+              <span className="logout-text">Logout</span>
+            </button>
+          </div>
+        )}
       </div>
       
       <style>{`
@@ -139,6 +215,59 @@ export default function Header({ activeTab, setActiveTab }) {
           background: var(--primary);
           box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
+
+        .user-section {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .user-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .user-avatar {
+          background: rgba(99, 102, 241, 0.15);
+          border: 1px solid rgba(99, 102, 241, 0.25);
+          border-radius: 50%;
+          padding: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #a5b4fc;
+        }
+
+        .user-name {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--text-primary);
+          max-width: 140px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .logout-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 7px 14px;
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--text-secondary);
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-sm);
+          transition: all var(--transition-fast);
+        }
+
+        .logout-btn:hover {
+          color: #ef4444;
+          background: rgba(239, 68, 68, 0.08);
+          border-color: rgba(239, 68, 68, 0.25);
+        }
         
         @media (max-width: 640px) {
           .header-inner {
@@ -154,6 +283,17 @@ export default function Header({ activeTab, setActiveTab }) {
           .nav-menu {
             width: 100%;
             justify-content: space-around;
+          }
+
+          .user-section {
+            width: 100%;
+            justify-content: center;
+            padding-top: 4px;
+            border-top: 1px solid var(--border-color);
+          }
+
+          .logout-text {
+            display: none;
           }
         }
       `}</style>

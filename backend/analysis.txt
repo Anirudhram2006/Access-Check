@@ -1,0 +1,42 @@
+===== exp-no-script-arial spans 3 =====
+  font=Helvetica chars=20 size=12.0 textlen=20
+    text=no-script font=arial
+  font=ArialUnicodeMS chars=42 size=12.0 textlen=42
+    text=T: வணக்கம் இது ஒரு தமிழ் ேசாதைன உைர ஆகும்.
+  font=ArialUnicodeMS chars=36 size=12.0 textlen=36
+    text=H: नमस्ते यह एक िहदी परीक्षण पाठ है।
+===== exp-script-tam-arial spans 3 =====
+  font=Helvetica chars=21 size=12.0 textlen=21
+    text=script=tam font=arial
+  font=ArialUnicodeMS chars=42 size=12.0 textlen=42
+    text=T: வணக்கம் இது ஒரு தமிழ் ேசாதைன உைர ஆகும்.
+  font=ArialUnicodeMS chars=36 size=12.0 textlen=36
+    text=H: नमस्ते यह एक िहदी परीक्षण पाठ है।
+===== exp-script-dev-arial spans 3 =====
+  font=Helvetica chars=21 size=12.0 textlen=21
+    text=script=dev font=arial
+  font=ArialUnicodeMS chars=42 size=12.0 textlen=42
+    text=T: வணக்கம் இது ஒரு தமிழ் ேசாதைன உைர ஆகும்.
+  font=ArialUnicodeMS chars=36 size=12.0 textlen=36
+    text=H: नमस्ते यह एक िहदी परीक्षण पाठ है।
+===== exp-no-script-nirmala spans 3 =====
+  font=Helvetica chars=22 size=12.0 textlen=22
+    text=no-script font=nirmala
+  font=NirmalaUI chars=42 size=12.0 textlen=42
+    text=T: வணக்கம் இது ஒரு தமிழ் ேசாதைன உைர ஆகும்.
+  font=NirmalaUI chars=37 size=12.0 textlen=37
+    text=H: नमस्ते यह एक िहंदी परीक्षण पाठ है।
+===== exp-script-tam-nirmala spans 3 =====
+  font=Helvetica chars=23 size=12.0 textlen=23
+    text=script=tam font=nirmala
+  font=NirmalaUI chars=42 size=12.0 textlen=42
+    text=T: வணக்கம் இது ஒரு தமிழ் ேசாதைன உைர ஆகும்.
+  font=NirmalaUI chars=37 size=12.0 textlen=37
+    text=H: नमस्ते यह एक िहंदी परीक्षण पाठ है।
+===== exp-script-deva-nirmala spans 3 =====
+  font=Helvetica chars=24 size=12.0 textlen=24
+    text=script=deva font=nirmala
+  font=NirmalaUI chars=42 size=12.0 textlen=42
+    text=T: வணக்கம் இது ஒரு தமிழ் ேசாதைன உைர ஆகும்.
+  font=NirmalaUI chars=37 size=12.0 textlen=37
+    text=H: नमस्ते यह एक िहंदी परीक्षण पाठ है।
