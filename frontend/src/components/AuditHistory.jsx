@@ -8,7 +8,7 @@ import { SourceFindingCard } from './SourceCodeAnalysis';
 import { ApiResultView } from './ApiAnalysis';
 import { calculateScore } from '../utils/score';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 /**
  * AuditHistory Component

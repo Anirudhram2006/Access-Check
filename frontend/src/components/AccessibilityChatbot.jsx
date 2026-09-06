@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, Trash2, AlertCircle, Loader2, Bot, User } from 'lucide-react';
 import { calculateScore } from '../utils/score';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 /**
  * AccessibilityChatbot Component

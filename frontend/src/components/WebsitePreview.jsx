@@ -11,7 +11,7 @@ import { ZoomIn, ZoomOut, Maximize2, ShieldCheck, Lock, RotateCw, ChevronLeft, C
  */
 export default function WebsitePreview({ url, screenshotPath }) {
   const [zoom, setZoom] = useState(100);
-  const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   
   // Construct absolute screenshot URL
   const absoluteScreenshotUrl = screenshotPath.startsWith('http') 

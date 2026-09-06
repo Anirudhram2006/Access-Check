@@ -23,8 +23,7 @@ export default function VisionSimulator({
   const [activeMode, setActiveMode] = useState('original');
   const [zoom, setZoom] = useState(100);
 
-  const BACKEND_URL = 'http://localhost:5000';
-
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const modes = [
     {
       id: 'original',

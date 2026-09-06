@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AlertTriangle, BarChart3, Shield, TrendingUp } from 'lucide-react';
 import { getRuleSuggestion } from '../utils/ruleSuggestions';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const IMPACT_STYLES = {
   critical: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.08)', border: 'rgba(239, 68, 68, 0.25)' },

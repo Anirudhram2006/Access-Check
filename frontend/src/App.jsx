@@ -15,7 +15,7 @@ import AuthPage from './components/AuthPage';
 import { demoScan } from './utils/demoScan';
 import { ShieldAlert, BookOpen, Cpu, HardDrive } from 'lucide-react';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function App() {
   const [user, setUser] = useState(null);

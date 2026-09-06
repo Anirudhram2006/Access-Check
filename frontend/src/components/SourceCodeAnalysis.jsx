@@ -3,7 +3,7 @@ import { FileCode2, UploadCloud, ShieldAlert,
   X, FileText, Code2, CheckCircle2, RefreshCw, Trash2, ChevronUp, ChevronDown, BookOpen, Clock,
   Wrench, FileDown, AlertTriangle, Loader2 } from 'lucide-react';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const SEVERITY_META = {
   critical: { color: 'var(--critical)', bg: 'var(--critical-bg)', border: 'var(--critical-border)', icon: 'critical' },

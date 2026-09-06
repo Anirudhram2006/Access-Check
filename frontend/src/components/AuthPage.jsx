@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Shield, Mail, Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function AuthPage({ onAuth }) {
   const [mode, setMode] = useState('login');

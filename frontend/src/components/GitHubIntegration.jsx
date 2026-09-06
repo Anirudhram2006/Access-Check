@@ -3,7 +3,7 @@ import { GitBranch, Loader2, Folder, FolderGit2, FileText, ArrowLeft, RefreshCw,
 import { SourceResults } from './SourceCodeAnalysis';
 import { DEMO_USERNAME, DEMO_REPOS, getDemoDirEntries, getDemoFileContent } from '../utils/demoGitHubData';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const SUPPORTED_EXT = new Set(['html', 'htm', 'jsx', 'js', 'ts', 'tsx', 'css']);
 
