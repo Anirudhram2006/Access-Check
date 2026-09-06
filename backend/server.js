@@ -29,7 +29,12 @@ const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toSt
 
 // Enable Cross-Origin Resource Sharing (CORS) for front-end integration
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+  origin: [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'https://access-check-delta.vercel.app'
+],
   credentials: true
 }));
 
