@@ -10,9 +10,16 @@ const router = express.Router();
  * Authentication middleware for audit routes.
  */
 function requireAuth(req, res, next) {
+  console.log('[PDF/AUTH] requireAuth:', {
+    path: req.path,
+    userId: req.session?.userId || null,
+    sessionId: req.sessionID || null
+  });
+
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ error: 'Authentication required. Please log in.' });
   }
+
   next();
 }
 
