@@ -10,12 +10,6 @@ const router = express.Router();
  * Authentication middleware for audit routes.
  */
 function requireAuth(req, res, next) {
-  console.log('[PDF/AUTH] requireAuth:', {
-    path: req.path,
-    userId: req.session?.userId || null,
-    sessionId: req.sessionID || null
-  });
-
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ error: 'Authentication required. Please log in.' });
   }
@@ -118,7 +112,6 @@ router.get('/', requireAuth, (req, res) => {
  * GET /api/audits/:id/pdf
  */
 router.get('/:id/pdf', requireAuth, async (req, res) => {
-  console.log('[PDF] PDF route reached:', req.params.id);
   try {
     const userId = req.session.userId;
     const auditId = req.params.id;
@@ -207,10 +200,8 @@ router.get('/:id/pdf', requireAuth, async (req, res) => {
     res.setHeader('Content-Length', pdfBuffer.length);
     return res.send(pdfBuffer);
 } catch (error) {
-  console.error('[PDF] Failed to generate PDF report:', error);
   return res.status(500).json({
-    error: error.message,
-    stack: error.stack
+    error: 'Failed to generate PDF report.'
   });
 }
 });

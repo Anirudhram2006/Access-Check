@@ -22,38 +22,27 @@ const F_SMALL = 9;
 const LINE_GAP = 5;
 
 // ---------------------------------------------------------------------------
-// Font selection (minimum necessary solution: one font covers all three
-// scripts — Nirmala UI ships with Windows and provides proper OpenType
-// GSUB/GPOS tables for Tamil and Devanagari plus Latin for English).
+// Font selection — bundled Noto Sans fonts (regular + bold) for Tamil,
+// Devanagari and Latin. These ship with the repo in backend/fonts/ so the
+// report renders identically on Windows and on Render Linux without relying
+// on any system font. The Noto Sans Tamil and Devanagari faces each include
+// Basic Latin glyphs, so they also cover English text.
 // ---------------------------------------------------------------------------
 
-function getSystemFontsDir() {
-  if (process.platform === 'win32') {
-    return path.join(process.env.SystemRoot || 'C:\\Windows', 'Fonts');
-  }
-  if (process.platform === 'darwin') {
-    return '/System/Library/Fonts/Supplemental';
-  }
-  return '/usr/share/fonts';
-}
+const BUNDLED_FONTS_DIR = path.join(__dirname, 'fonts');
 
-function findSystemFont(candidates) {
-  for (const candidate of candidates) {
-    try {
-      if (fs.existsSync(candidate)) return candidate;
-    } catch (e) { /* skip */ }
-  }
-  return null;
-}
+// pdfkit-registered fonts (used for every doc.text()/flowText() call).
+// 'Body'/'BodyBold' serve English and any pdfkit-rendered Indic glyphs.
+const BODY_FONT = path.join(BUNDLED_FONTS_DIR, 'NotoSansTamil-Regular.ttf');
+const BODY_BOLD_FONT = path.join(BUNDLED_FONTS_DIR, 'NotoSansTamil-Bold.ttf');
 
-const FONTS_DIR = getSystemFontsDir();
-const NIRMALA_PATH = findSystemFont([
-  path.join(FONTS_DIR, 'Nirmala.ttf'),
-]);
-const NIRMALA_BOLD_PATH = findSystemFont([
-  path.join(FONTS_DIR, 'NirmalaB.ttf'),
-]);
-const NIRMALA_UPEM = 2048;
+// HarfBuzz shaping fonts keyed by OpenType script tag — see scriptTagFor().
+// Each script gets the bundled font that contains its GSUB/GPOS tables.
+const HB_FONT_PATHS = {
+  taml: path.join(BUNDLED_FONTS_DIR, 'NotoSansTamil-Regular.ttf'),
+  deva: path.join(BUNDLED_FONTS_DIR, 'NotoSansDevanagari-Regular.ttf'),
+  latn: path.join(BUNDLED_FONTS_DIR, 'NotoSansTamil-Regular.ttf'),
+};
 
 // ---------------------------------------------------------------------------
 // Score / severity helpers (kept from the original implementation).
@@ -144,28 +133,34 @@ function drawRule(doc, y) {
 
 // ---------------------------------------------------------------------------
 // HarfBuzz Indic shaping + glyph outline rendering.
-// Nirmala (and most proper Indic fonts) can only be rendered correctly by
-// running the OpenType GSUB/GPOS shaping engine. pdfkit's text() does not do
-// this, so Indic text is shaped with HarfBuzz and each shaped glyph is drawn
-// directly from its outline path.
+// Tamil and Devanagari (and most proper Indic fonts) can only be rendered
+// correctly by running the OpenType GSUB/GPOS shaping engine. pdfkit's text()
+// does not do this, so Indic text is shaped with HarfBuzz and each shaped
+// glyph is drawn directly from its outline path.
 // ---------------------------------------------------------------------------
 
 let hbReady = null;
 let hbcore = null; // harfbuzzjs module namespace
-let hbFont = null; // HarfBuzz font wrapper
+const hbFonts = {}; // HarfBuzz font wrappers keyed by script tag (taml/devd/latn)
+let HARFBUZZ_UPEM = 1000; // units-per-em shared by the bundled Noto Sans fonts
 
 function ensureHarfBuzz() {
   if (!hbReady) {
     hbReady = (async () => {
-      if (!NIRMALA_PATH) {
-        throw new Error('Indic font (Nirmala.ttf) not found — cannot render Tamil/Hindi text.');
-      }
       const mod = await import('harfbuzzjs');
-      const data = fs.readFileSync(NIRMALA_PATH);
-      const blob = new mod.Blob(data);
-      const face = new mod.Face(blob);
       hbcore = mod;
-      hbFont = new mod.Font(face);
+      let upem = null;
+      for (const [script, fontPath] of Object.entries(HB_FONT_PATHS)) {
+        if (!fs.existsSync(fontPath)) {
+          throw new Error(`Bundled font not found: ${fontPath} — cannot render ${script} text.`);
+        }
+        const data = fs.readFileSync(fontPath);
+        const blob = new mod.Blob(data);
+        const face = new mod.Face(blob);
+        hbFonts[script] = new mod.Font(face);
+        if (upem == null) upem = face.upem;
+      }
+      HARFBUZZ_UPEM = upem || 1000;
     })();
   }
   return hbReady;
@@ -177,7 +172,7 @@ function shapeIndic(text, script) {
   buf.guessSegmentProperties();
   buf.direction = 'ltr';
   buf.script = script;
-  hbcore.shape(hbFont, buf);
+  hbcore.shape(hbFonts[script] || hbFonts.latn, buf);
   return {
     infos: buf.getGlyphInfos(),
     positions: buf.getGlyphPositions(),
@@ -194,13 +189,14 @@ function shapedWidth(text, script, scale) {
 }
 
 function drawShapedLine(doc, text, script, x, baselineY, fontSize, color) {
-  const scale = fontSize / NIRMALA_UPEM;
+  const scale = fontSize / HARFBUZZ_UPEM;
   const { infos, positions } = shapeIndic(text, script);
+  const font = hbFonts[script] || hbFonts.latn;
   let penX = x;
   for (let i = 0; i < infos.length; i++) {
     const gid = infos[i].codepoint;
     const p = positions[i];
-    const svg = hbFont.glyphToPath(gid);
+    const svg = font.glyphToPath(gid);
     if (svg && svg.length > 0) {
       const gx = penX + p.xOffset * scale;
       const gy = baselineY - p.yOffset * scale;
@@ -217,7 +213,7 @@ function drawShapedLine(doc, text, script, x, baselineY, fontSize, color) {
 }
 
 function renderIndicParagraph(doc, text, script, x, y, fontSize, color, width) {
-  const scale = fontSize / NIRMALA_UPEM;
+  const scale = fontSize / HARFBUZZ_UPEM;
   const lineHeight = Math.round(fontSize * 1.7);
   const words = String(text).split(/\s+/).filter(Boolean);
   if (words.length === 0) return y;
@@ -300,7 +296,7 @@ function measureWord(doc, word, fontSize, scale) {
  * Over-long single tokens are split so no content runs off the page.
  */
 function wrapMixedText(doc, text, width, fontSize) {
-  const scale = fontSize / NIRMALA_UPEM;
+  const scale = fontSize / HARFBUZZ_UPEM;
   const space = shapedWidth(' ', 'latn', scale);
   const words = String(text).split(/\s+/).filter(Boolean);
   const widths = words.map(w => measureWord(doc, w, fontSize, scale));
@@ -373,7 +369,7 @@ function wrapMixedText(doc, text, width, fontSize) {
  */
 function renderMixedParagraph(doc, text, x, y, fontSize, color, width) {
   const lines = wrapMixedText(doc, text, width, fontSize);
-  const scale = fontSize / NIRMALA_UPEM;
+  const scale = fontSize / HARFBUZZ_UPEM;
   const lineHeight = Math.round(fontSize * 1.75);
   if (lines.length === 0) return y;
 
@@ -399,7 +395,7 @@ function renderMixedParagraph(doc, text, x, y, fontSize, color, width) {
  */
 function drawCodeBox(doc, code, x, y, width) {
   const fontSize = 9.5;
-  const scale = fontSize / NIRMALA_UPEM;
+  const scale = fontSize / HARFBUZZ_UPEM;
   const lineHeight = Math.round(fontSize * 1.7);
   const padX = 10;
   const padY = 7;
@@ -487,16 +483,9 @@ function generateAuditPDF(audit, screenshotsDir) {
 
     const chunks = [];
 
-    // Register fonts.
-    if (!NIRMALA_PATH) {
-      throw new Error('Nirmala.ttf is required to render the report (English + Tamil + Hindi).');
-    }
-    doc.registerFont('Body', NIRMALA_PATH);
-    if (NIRMALA_BOLD_PATH) {
-      doc.registerFont('BodyBold', NIRMALA_BOLD_PATH);
-    } else {
-      doc.registerFont('BodyBold', NIRMALA_PATH);
-    }
+    // Register fonts (bundled Noto Sans — regular + bold).
+    doc.registerFont('Body', BODY_FONT);
+    doc.registerFont('BodyBold', BODY_BOLD_FONT);
 
     const violations = Array.isArray(audit.violations) ? audit.violations : [];
     const score = audit.score != null ? audit.score : calculateScore(violations);
@@ -700,15 +689,9 @@ function generateSourceCodePDF(audit) {
 
     const chunks = [];
 
-    if (!NIRMALA_PATH) {
-      throw new Error('Nirmala.ttf is required to render the report (English + Tamil + Hindi).');
-    }
-    doc.registerFont('Body', NIRMALA_PATH);
-    if (NIRMALA_BOLD_PATH) {
-      doc.registerFont('BodyBold', NIRMALA_BOLD_PATH);
-    } else {
-      doc.registerFont('BodyBold', NIRMALA_PATH);
-    }
+    // Register fonts (bundled Noto Sans — regular + bold).
+    doc.registerFont('Body', BODY_FONT);
+    doc.registerFont('BodyBold', BODY_BOLD_FONT);
 
     const violations = Array.isArray(audit.violations) ? audit.violations : [];
     const score = audit.score != null ? audit.score : calculateScore(violations);

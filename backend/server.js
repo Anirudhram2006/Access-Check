@@ -14,7 +14,6 @@ const session = require('express-session');
 const { runAudit, isValidUrl } = require('./scanner');
 const authRoutes = require('./auth');
 const auditRoutes = require('./audit');
-console.log('[AUDIT] audit.js routes loaded successfully');
 const analyticsRoutes = require('./analytics');
 const sourceAnalysisRoutes = require('./sourceAnalysis');
 const apiAnalysisRoutes = require('./apiAnalysis');
