@@ -198,10 +198,12 @@ router.get('/:id/pdf', requireAuth, async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Length', pdfBuffer.length);
     return res.send(pdfBuffer);
-  } catch (error) {
-    console.error('Error generating PDF:', error.message);
-    return res.status(500).json({ error: 'Failed to generate PDF report.' });
-  }
+ } catch (error) {
+    console.error('[PDF] Failed to generate PDF report:', error);
+    return res.status(500).json({
+        error: 'Failed to generate PDF report.'
+    });
+}
 });
 
 /**
