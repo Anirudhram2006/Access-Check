@@ -22,22 +22,26 @@ const F_SMALL = 9;
 const LINE_GAP = 5;
 
 // ---------------------------------------------------------------------------
-// Font selection — bundled Noto Sans fonts (regular + bold) for Tamil,
-// Devanagari and Latin. These ship with the repo in backend/fonts/ so the
-// report renders identically on Windows and on Render Linux without relying
-// on any system font. The Noto Sans Tamil and Devanagari faces each include
-// Basic Latin glyphs, so they also cover English text.
+// Font selection.
+// Tamil and Devanagari are rendered with the bundled Noto Sans fonts
+// (backend/fonts/) through HarfBuzz. Those Noto faces are script subsets —
+// they contain Tamil/Devanagari codepoints plus digits and punctuation but NO
+// Latin letters — so English/Latin text uses pdfkit's built-in base-14
+// Helvetica, which every PDF viewer supplies on every platform (Windows,
+// Render Linux, browsers).
 // ---------------------------------------------------------------------------
 
 const BUNDLED_FONTS_DIR = path.join(__dirname, 'fonts');
 
-// pdfkit-registered fonts (used for every doc.text()/flowText() call).
-// 'Body'/'BodyBold' serve English and any pdfkit-rendered Indic glyphs.
-const BODY_FONT = path.join(BUNDLED_FONTS_DIR, 'NotoSansTamil-Regular.ttf');
-const BODY_BOLD_FONT = path.join(BUNDLED_FONTS_DIR, 'NotoSansTamil-Bold.ttf');
+// English/Latin fonts (pdfkit base-14). Registered under the friendly names
+// 'Body'/'BodyBold' so flowText()/footers/widthOfString() keep working.
+const EN_FONT = 'Helvetica';
+const EN_BOLD_FONT = 'Helvetica-Bold';
 
 // HarfBuzz shaping fonts keyed by OpenType script tag — see scriptTagFor().
 // Each script gets the bundled font that contains its GSUB/GPOS tables.
+// 'latn' is a fallback only; Latin mixed-paragraph runs are drawn with
+// Helvetica via pdfkit (see drawShapedLine).
 const HB_FONT_PATHS = {
   taml: path.join(BUNDLED_FONTS_DIR, 'NotoSansTamil-Regular.ttf'),
   deva: path.join(BUNDLED_FONTS_DIR, 'NotoSansDevanagari-Regular.ttf'),
@@ -108,7 +112,7 @@ function flowText(doc, text, x, y, opts) {
   const lineGap = opts.lineGap != null ? opts.lineGap : LINE_GAP;
   const align = opts.align || 'left';
 
-  const font = bold ? 'BodyBold' : 'Body';
+  const font = bold ? EN_BOLD_FONT : EN_FONT;
   // pdfkit's text() wraps by width and automatically continues onto a new
   // page when a paragraph is taller than the page, so we do not add a page
   // manually here (that would create blank trailing pages).
@@ -189,6 +193,15 @@ function shapedWidth(text, script, scale) {
 }
 
 function drawShapedLine(doc, text, script, x, baselineY, fontSize, color) {
+  // Latin (English) runs have no glyphs in the bundled Noto script subsets,
+  // so they are drawn with pdfkit's base-14 Helvetica. 'baseline: alphabetic'
+  // puts the text baseline exactly on the shared baseline used by the Indic
+  // glyphs drawn below.
+  if (script === 'latn') {
+    doc.font('Body').fontSize(fontSize).fillColor(color)
+      .text(String(text), x, baselineY, { baseline: 'alphabetic', lineBreak: false });
+    return x + doc.widthOfString(String(text));
+  }
   const scale = fontSize / HARFBUZZ_UPEM;
   const { infos, positions } = shapeIndic(text, script);
   const font = hbFonts[script] || hbFonts.latn;
@@ -284,7 +297,14 @@ function scriptTagFor(type) {
 function measureWord(doc, word, fontSize, scale) {
   let w = 0;
   for (const run of splitScriptRuns(word)) {
-    w += shapedWidth(run.text, scriptTagFor(run.type), scale);
+    if (run.type === 'latin') {
+      // Latin runs are drawn with Helvetica (drawShapedLine), so measure them
+      // with the same font to keep wrapping consistent with the rendering.
+      doc.font('Body').fontSize(fontSize);
+      w += doc.widthOfString(run.text);
+    } else {
+      w += shapedWidth(run.text, scriptTagFor(run.type), scale);
+    }
   }
   return w;
 }
@@ -297,7 +317,8 @@ function measureWord(doc, word, fontSize, scale) {
  */
 function wrapMixedText(doc, text, width, fontSize) {
   const scale = fontSize / HARFBUZZ_UPEM;
-  const space = shapedWidth(' ', 'latn', scale);
+  doc.font('Body').fontSize(fontSize);
+  const space = doc.widthOfString(' ');
   const words = String(text).split(/\s+/).filter(Boolean);
   const widths = words.map(w => measureWord(doc, w, fontSize, scale));
 
@@ -444,14 +465,14 @@ function drawFooters(doc) {
     doc.switchToPage(i);
     const prevMaxY = doc.page.maxY;
     doc.page.maxY = () => doc.page.height;
-    doc.fontSize(7).font('Body').fillColor('#94A3B8')
+    doc.fontSize(7).font(EN_FONT).fillColor('#94A3B8')
       .text(
         'Access Check | Automated accessibility report.',
         MARGIN,
         FOOTER_LINE_Y,
         { width: CONTENT_WIDTH, align: 'center' }
       );
-    doc.fontSize(8).font('Body').fillColor('#64748B')
+    doc.fontSize(8).font(EN_FONT).fillColor('#64748B')
       .text(`Page ${i - range.start + 1} of ${total}`, MARGIN, FOOTER_Y,
         { width: CONTENT_WIDTH, align: 'center' });
     doc.page.maxY = prevMaxY;
@@ -483,9 +504,10 @@ function generateAuditPDF(audit, screenshotsDir) {
 
     const chunks = [];
 
-    // Register fonts (bundled Noto Sans — regular + bold).
-    doc.registerFont('Body', BODY_FONT);
-    doc.registerFont('BodyBold', BODY_BOLD_FONT);
+    // Register fonts (base-14 Helvetica for English/Latin; the bundled Noto
+    // subsets for Tamil/Devanagari are used directly via HarfBuzz).
+    doc.registerFont('Body', EN_FONT);
+    doc.registerFont('BodyBold', EN_BOLD_FONT);
 
     const violations = Array.isArray(audit.violations) ? audit.violations : [];
     const score = audit.score != null ? audit.score : calculateScore(violations);
@@ -494,7 +516,7 @@ function generateAuditPDF(audit, screenshotsDir) {
     let y = MARGIN;
 
     // ---- Header ----
-    doc.font('BodyBold').fontSize(F_TITLE).fillColor('#0F172A')
+    doc.font(EN_BOLD_FONT).fontSize(F_TITLE).fillColor('#0F172A')
       .text('Access Check', MARGIN, y);
     y = doc.y + 6;
     y = flowText(doc, 'Accessibility Audit Report', MARGIN, y,
@@ -689,9 +711,10 @@ function generateSourceCodePDF(audit) {
 
     const chunks = [];
 
-    // Register fonts (bundled Noto Sans — regular + bold).
-    doc.registerFont('Body', BODY_FONT);
-    doc.registerFont('BodyBold', BODY_BOLD_FONT);
+    // Register fonts (base-14 Helvetica for English/Latin; the bundled Noto
+    // subsets for Tamil/Devanagari are used directly via HarfBuzz).
+    doc.registerFont('Body', EN_FONT);
+    doc.registerFont('BodyBold', EN_BOLD_FONT);
 
     const violations = Array.isArray(audit.violations) ? audit.violations : [];
     const score = audit.score != null ? audit.score : calculateScore(violations);
@@ -700,7 +723,7 @@ function generateSourceCodePDF(audit) {
     let y = MARGIN;
 
     // ---- Header ----
-    doc.font('BodyBold').fontSize(F_TITLE).fillColor('#0F172A')
+    doc.font(EN_BOLD_FONT).fontSize(F_TITLE).fillColor('#0F172A')
       .text('Access Check', MARGIN, y);
     y = doc.y + 6;
     y = flowText(doc, 'Source Code Analysis Report', MARGIN, y,
