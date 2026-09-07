@@ -111,6 +111,7 @@ router.get('/', requireAuth, (req, res) => {
  * GET /api/audits/:id/pdf
  */
 router.get('/:id/pdf', requireAuth, async (req, res) => {
+  console.log('[PDF] PDF route reached:', req.params.id);
   try {
     const userId = req.session.userId;
     const auditId = req.params.id;
